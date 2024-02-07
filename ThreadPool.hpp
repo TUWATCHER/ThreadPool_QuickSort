@@ -64,7 +64,7 @@ class ThreadPoolMod
         void start();
         void stop();
         void push_task(FuncType f, int id, int arg);
-        void push_task(FuncTypeArray f, int* array, long left, long right);
+        std::future<void> push_task(FuncTypeArray f, int* array, long left, long right);
         void threadFunc(int qindex);
 
     private:
@@ -80,7 +80,7 @@ class RequestHandler
        RequestHandler();
        ~RequestHandler();
        // отправка запроса на выполнение
-       void pushRequest(FuncTypeArray f, int* array, long left, long right);
+       std::future<void> pushRequest(FuncTypeArray f, int* array, long left, long right);
    private:
        // пул потоков
        ThreadPoolMod m_tpool;
