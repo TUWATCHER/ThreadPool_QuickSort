@@ -35,13 +35,15 @@ void ThreadPoolMod::push_task(FuncType f, int id, int arg)
    m_thread_queues[queue_to_push].push(task);
 }
 
-void ThreadPoolMod::push_task(FuncTypeArray f, int *array, long left, long right)
+std::future<void> ThreadPoolMod::push_task(FuncTypeArray f, int *array, long left, long right)
 {
     int queue_to_push = m_index++ % m_thread_count;
-   // формируем функтор
-   task_type task = [&](){f(array, left, right); };
+    auto promise = std::make_shared<std::promise<void>>();
+    auto result = promise->get_future();
+    task_type task = ([=]{f(array, left, right); promise->set_value();});
    // кладем в очередь
-   m_thread_queues[queue_to_push].push(task);
+    m_thread_queues[queue_to_push].push(task);
+    return result;
 }
 
 void ThreadPoolMod::threadFunc(int qindex)
@@ -86,7 +88,7 @@ RequestHandler::~RequestHandler()
 {
    m_tpool.stop();
 }
-void RequestHandler::pushRequest(FuncTypeArray f, int* array, long left, long right)
+std::future<void> RequestHandler::pushRequest(FuncTypeArray f, int* array, long left, long right)
 {
-   m_tpool.push_task(f, array, left, right);
+   return m_tpool.push_task(f, array, left, right);
 }
