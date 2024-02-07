@@ -2,7 +2,7 @@
 #include <iostream>
 
 volatile bool make_thread = true;
-ThreadPoolMod pool;
+RequestHandler rh;
 
 void quicksort(int *array, long left, long right)
 {
@@ -36,9 +36,11 @@ void quicksort(int *array, long left, long right)
    {
        // если элементов в левой части больше чем 10000
        // вызываем асинхронно рекурсию для правой части
-      auto f = pool.push_task(quicksort,array,left,right_bound); // void f error
-      pool.push_task(quicksort,array,left,right_bound); // seg_fault error!
+      
+
+      auto f = rh.pushRequest(quicksort, array, left, right_bound);
       quicksort(array, left_bound, right);
+      f.wait();
        
   }
     else 
@@ -51,22 +53,41 @@ void quicksort(int *array, long left, long right)
 
 int main()
 {
-    srand(0);
-    long arr_size = 10;
-    int* array = new int[arr_size];
-    for(long i=0;i<arr_size; i++) {
-        array[i] = rand() % 500000;
-    }
+  srand(0);
+   long arr_size = 100000;
+   int* array = new int[arr_size];
+   for(long i=0;i<arr_size; i++) {
+       array[i] = rand() % 500000;
+   }
+
+   time_t start, end;
 
 
-    // многопоточный запуск
-    quicksort(array, 0, arr_size);    
+   // многопоточный запуск
+   time(&start);
+   quicksort(array, 0, arr_size);
+   time(&end);
 
-    for(long i=0;i<arr_size-1; i++) {
-        if (array[i] > array[i + 1]) {
-          std::cout << "Unsorted" << std::endl;
-          break;
-        }
-    }
-  return 0;
+   double seconds = difftime(end, start);
+   printf("The time: %f seconds\n", seconds);
+
+   for(long i=0;i<arr_size-1; i++) {
+       if (array[i] > array[i + 1]) {
+         std::cout << "Unsorted" << std::endl;
+         break;
+       }
+   }
+
+   for(long i=0;i<arr_size; i++) {
+       array[i] = rand() % 500000;
+   }
+   // однопоточный запуск
+   make_thread = false;
+   time(&start);
+   quicksort(array, 0, arr_size);
+   time(&end);
+   seconds = difftime(end, start);
+   printf("The time: %f seconds\n", seconds);
+   delete [] array;
+   return 0;
 }
